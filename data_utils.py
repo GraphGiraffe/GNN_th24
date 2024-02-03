@@ -166,7 +166,7 @@ def make_dataset(data_dir, num_files, dataset_name=None, data_source=None, with_
             file_list = f.read().splitlines()
             file_list = file_list[:num_files]
     else:
-        file_list = os.listdir(os.path.join(data_dir, 'nodes'))[:num_files]
+        file_list = os.listdir(os.path.join(data_dir, 'u_in1'))[:num_files]
 
     if 'edges' not in os.listdir(data_dir):
         generate_edges_dir(data_dir)
@@ -222,6 +222,28 @@ def make_dataset(data_dir, num_files, dataset_name=None, data_source=None, with_
                 torch.float32).swapaxes(0, 1)
             bc = bc.repeat(nodes.shape[0], 1)
 
+        u_in1 = torch.tensor((pd.read_csv(os.path.join(data_dir, 'u_in1', file), header=None)).values).to(
+                torch.float32).swapaxes(0, 1)
+        u_in1 = u_in1.repeat(nodes.shape[0], 1)
+
+        v_in2 = torch.tensor((pd.read_csv(os.path.join(data_dir, 'v_in2', file), header=None)).values).to(
+                torch.float32).swapaxes(0, 1)
+        v_in2 = v_in2.repeat(nodes.shape[0], 1)
+
+        obj_coords = torch.tensor((pd.read_csv(os.path.join(data_dir, 'ObjectCoord', file), header=None)).values).to(
+                torch.float32).swapaxes(0, 1)
+        obj_coords_x = obj_coords[0, :]
+        obj_coords_y = obj_coords[1, :]
+        obj_coords_x = obj_coords_x.repeat(nodes.shape[0], 1)
+        obj_coords_y = obj_coords_y.repeat(nodes.shape[0], 1)
+
+        vent_coords = torch.tensor((pd.read_csv(os.path.join(data_dir, 'VentCoord', file), header=None)).values).to(
+                torch.float32).swapaxes(0, 1)
+        vent_coords_x = vent_coords[0, :]
+        vent_coords_y = vent_coords[1, :]
+        vent_coords_x = vent_coords_x.repeat(nodes.shape[0], 1)
+        vent_coords_y = vent_coords_y.repeat(nodes.shape[0], 1)
+
         if norm_coord:
             xy_norm = torch.div(torch.sub(nodes[:, :2], dom_bound_min), range_xy)
 
@@ -239,8 +261,11 @@ def make_dataset(data_dir, num_files, dataset_name=None, data_source=None, with_
             flow = torch.div(torch.sub(flow, flownorm1), range_flow)
 
         data_list.append(
-            Data(x=nodes, edge_index=edges_transp, edge_attr=edge_feats, flow=flow, bc=bc, hop2_nodes=hop2_nodes,
-                 cells=elements))
+            Data(x=nodes, edge_index=edges_transp, edge_attr=edge_feats, flow=flow, bc=bc,
+                 u_in1=u_in1, v_in2=v_in2,
+                 obj_coords_x=obj_coords_x, obj_coords_y=obj_coords_y,
+                 vent_coords_x=vent_coords_x, vent_coords_y=vent_coords_y,
+                 hop2_nodes=hop2_nodes, cells=elements))
 
     if save:
         print(f'Saving : {dataset_name}')

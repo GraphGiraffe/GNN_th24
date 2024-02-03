@@ -188,7 +188,7 @@ class FlowGNN(nn.Module):  # универсальная модель
         skip_info = x[:, :self.geom_in_dim]
         fc_out = None
         if self.fc_con_list is not None:
-            fc_out = self.fc_layers_list[0](data.bc)
+            fc_out = self.fc_layers_list[0](torch.cat([data.bc, data.u_in1, data.v_in2], 1))
         fc_count = 1
 
         for i, layer in enumerate(self.gcnn_layers_list):
@@ -196,7 +196,7 @@ class FlowGNN(nn.Module):  # универсальная модель
             if layer.idx in self.fc_con_list[1:]:
                 graph_pool = global_mean_pool(x, data.batch)
                 graph_pool = graph_pool[data.batch]
-                fc_out = self.fc_layers_list[fc_count](torch.cat([data.bc, fc_out, graph_pool], 1))
+                fc_out = self.fc_layers_list[fc_count](torch.cat([data.bc, data.u_in1, data.v_in2, fc_out, graph_pool], 1))
                 fc_count += 1
             x, edge_attr = layer(x, data.edge_index, data.edge_attr, fc_out, skip_info)
 
